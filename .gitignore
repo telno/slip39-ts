@@ -97,3 +97,4 @@ typings/
 .lock-wscript
 package-lock.json*
 .idea/
+dist/

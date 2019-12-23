@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import * as slip39 from '../src/slip39';
-import * as slip39utils from '../src/utils'
 import { decodeHexString, encodeHexString } from '../src/utils';
 
 import { mnemonicVectors, vectors } from './vectors';
@@ -82,7 +81,7 @@ describe('Basic Tests', () => {
       assert.notEqual(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(mnemonics.slice(0, 5))));
     });
     it('should return valid mastersecret when user does not submit passphrse', () => {
-      assert.equal(decodeHexString(MS), slip39.Slip39.recoverSecret(nopwMnemonics.slice(0, 5)));
+      assert.equal(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(nopwMnemonics.slice(0, 5))));
     });
   });
 

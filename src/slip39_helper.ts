@@ -25,13 +25,20 @@ import {
 //
 // The round function used internally by the Feistel cipher.
 //
-function roundFunction(round: number, passphrase: number[], exp: number, salt: number[], secret: number[]) {
+function roundFunction(round: number, passphrase: number[], exp: number, salt: number[], secret: number[]): number[] {
   const saltedSecret = salt.concat(secret);
   const roundedPhrase = [round].concat(passphrase);
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
 
-  const key = crypto.pbkdf2Sync(Buffer.from(roundedPhrase), Buffer.from(saltedSecret), count, secret.length, 'sha256');
-  return Array.prototype.slice.call(key, 0);
+  try {
+    const r = Buffer.from(roundedPhrase);
+    const s = Buffer.from(saltedSecret);
+    const key = crypto.pbkdf2Sync(r, s, count, secret.length, 'sha256');
+    return Array.prototype.slice.call(key, 0);
+  } catch (e) {
+    debugger;
+    throw e;
+  }
 }
 
 function getSalt(identifier: number[]) {
@@ -81,7 +88,7 @@ function createDigest(randomData: number[], sharedSecret: number[]): number[] {
 }
 
 function interpolate(shares: Map<number, number[]>, x: number): number[] {
-  const arr = Array.from(shares.values());
+  const arr = Array.from(shares.values(), (arr) => arr.length);
   const sharesValueLengths = new Set(arr);
 
   if (sharesValueLengths.size !== 1) {
@@ -96,7 +103,7 @@ function interpolate(shares: Map<number, number[]>, x: number): number[] {
   // Logarithm of the product of (x_i - x) for i = 1, ... , k.
   let logProd = 0;
 
-  shares.forEach((v, k) => {
+  shares.forEach((_, k) => {
     logProd = logProd + LOG_TABLE[k ^ x];
   });
 
@@ -105,7 +112,7 @@ function interpolate(shares: Map<number, number[]>, x: number): number[] {
   shares.forEach((v, k) => {
     // The logarithm of the Lagrange basis polynomial evaluated at x.
     let sum = 0;
-    shares.forEach((vv, kk) => {
+    shares.forEach((_, kk) => {
       sum = sum + LOG_TABLE[k ^ kk];
     });
 
@@ -197,12 +204,17 @@ function rs1024Polymod(data: number[]) {
   let chk = 1;
 
   data.forEach((byte) => {
-    const b = chk >> 20;
-    chk = (chk & 0xFFFFF) << 10 ^ byte;
+    try {
+      const b = chk >> 20;
+      chk = (chk & 0xFFFFF) << 10 ^ byte;
 
-    for (let i = 0; i < 10; i++) {
-      const gen = (b >> i & 1) !== 0 ? GEN[i] : 0;
-      chk = chk ^ gen;
+      for (let i = 0; i < 10; i++) {
+        const gen = (b >> i & 1) !== 0 ? GEN[i] : 0;
+        chk = chk ^ gen;
+      }
+    } catch (e) {
+      debugger;
+      throw e;
     }
   });
 
@@ -239,7 +251,7 @@ function intFromIndices(indices: number[]) {
 //
 function intToIndices(value: bigint, length: number, bits: number) {
   const mask = BigInt((1 << bits) - 1);
-  const result = generateArray([], length, (i) => Number(value >> BigInt(i) * BigInt(bits) & mask));
+  const result = generateArray([], length, (i) => Number(value >> BigInt(i) * BigInt(bits) & mask)) as number[];
   return result.reverse();
 }
 

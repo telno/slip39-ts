@@ -65,10 +65,10 @@ export function encodeBigInt(number: bigint, paddedLength = 0): number[] {
   let num = number;
   const BYTE_MASK = BigInt(0xff);
   const BIGINT_ZERO = BigInt(0);
-  const result = new Array(0);
+  const result: number[] = new Array(0);
 
   while (num > BIGINT_ZERO) {
-    result.unshift(num & BYTE_MASK);
+    result.unshift(Number(num & BYTE_MASK));
     num = num >> BIGINT_WORD_BITS;
   }
 
