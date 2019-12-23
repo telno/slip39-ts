@@ -4,7 +4,8 @@ import { EXP_TABLE, LOG_TABLE } from './tables';
 import { WORD_LIST } from './words';
 import {
   bitsToBytes,
-  bitsToWords, decodeBigInt,
+  bitsToWords,
+  decodeBigInt,
   encodeBigInt,
   encodeHexString,
   generateArray,
@@ -14,12 +15,20 @@ import {
 import {
   CHECKSUM_WORDS_LENGTH,
   DIGEST_INDEX,
-  DIGEST_LENGTH, ID_BITS_LENGTH,
-  ITERATION_COUNT, ITERATION_EXP_BITS_LENGTH, ITERATION_EXP_WORDS_LENGTH,
+  DIGEST_LENGTH,
+  ID_BITS_LENGTH,
+  ITERATION_COUNT,
+  ITERATION_EXP_BITS_LENGTH,
+  ITERATION_EXP_WORDS_LENGTH,
   MAX_ITERATION_EXP,
-  MAX_SHARE_COUNT, METADATA_WORDS_LENGTH, MNEMONICS_WORDS_LENGTH, RADIX_BITS,
+  MAX_SHARE_COUNT,
+  METADATA_WORDS_LENGTH,
+  MNEMONICS_WORDS_LENGTH,
+  RADIX_BITS,
   ROUND_COUNT,
-  SALT_STRING, SECRET_INDEX, WORD_LIST_MAP,
+  SALT_STRING,
+  SECRET_INDEX,
+  WORD_LIST_MAP,
 } from './constants';
 
 //
@@ -30,15 +39,10 @@ function roundFunction(round: number, passphrase: number[], exp: number, salt: n
   const roundedPhrase = [round].concat(passphrase);
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
 
-  try {
-    const r = Buffer.from(roundedPhrase);
-    const s = Buffer.from(saltedSecret);
-    const key = crypto.pbkdf2Sync(r, s, count, secret.length, 'sha256');
-    return Array.prototype.slice.call(key, 0);
-  } catch (e) {
-    debugger;
-    throw e;
-  }
+  const r = Buffer.from(roundedPhrase);
+  const s = Buffer.from(saltedSecret);
+  const key = crypto.pbkdf2Sync(r, s, count, secret.length, 'sha256');
+  return Array.prototype.slice.call(key, 0);
 }
 
 function getSalt(identifier: number[]) {
@@ -49,10 +53,16 @@ function xor(a: number[], b: number[]) {
   if (a.length !== b.length) {
     throw new Error(`Invalid padding in mnemonic or insufficient length of mnemonics (${a.length} or ${b.length})`);
   }
-  return generateArray([], a.length, (i) => a[i] ^ b[i]);
+  return generateArray([], a.length, i => a[i] ^ b[i]);
 }
 
-export function crypt(masterSecret: number[], passphrase: string, iterationExponent: number, identifier: number[], encrypt = true) {
+export function crypt(
+  masterSecret: number[],
+  passphrase: string,
+  iterationExponent: number,
+  identifier: number[],
+  encrypt = true
+) {
   // Iteration exponent validated here.
   if (iterationExponent < 0 || iterationExponent > MAX_ITERATION_EXP) {
     throw Error(`Invalid iteration exponent (${iterationExponent}). Expected between 0 and ${MAX_ITERATION_EXP}`);
@@ -88,7 +98,7 @@ function createDigest(randomData: number[], sharedSecret: number[]): number[] {
 }
 
 function interpolate(shares: Map<number, number[]>, x: number): number[] {
-  const arr = Array.from(shares.values(), (arr) => arr.length);
+  const arr = Array.from(shares.values(), arr => arr.length);
   const sharesValueLengths = new Set(arr);
 
   if (sharesValueLengths.size !== 1) {
@@ -182,39 +192,32 @@ export function generateIdentifier() {
   const bits = ID_BITS_LENGTH % 8;
   const identifier = randomBytes(byte);
 
-  identifier[0] = identifier[0] & (1 << bits) - 1;
-
+  identifier[0] = identifier[0] & ((1 << bits) - 1);
   return identifier;
 }
 
-
 function rs1024Polymod(data: number[]) {
   const GEN = [
-    0xE0E040,
-    0x1C1C080,
+    0xe0e040,
+    0x1c1c080,
     0x3838100,
     0x7070200,
-    0xE0E0009,
-    0x1C0C2412,
-    0x38086C24,
-    0x3090FC48,
-    0x21B1F890,
-    0x3F3F120
+    0xe0e0009,
+    0x1c0c2412,
+    0x38086c24,
+    0x3090fc48,
+    0x21b1f890,
+    0x3f3f120,
   ];
   let chk = 1;
 
-  data.forEach((byte) => {
-    try {
-      const b = chk >> 20;
-      chk = (chk & 0xFFFFF) << 10 ^ byte;
+  data.forEach(byte => {
+    const b = chk >> 20;
+    chk = ((chk & 0xfffff) << 10) ^ byte;
 
-      for (let i = 0; i < 10; i++) {
-        const gen = (b >> i & 1) !== 0 ? GEN[i] : 0;
-        chk = chk ^ gen;
-      }
-    } catch (e) {
-      debugger;
-      throw e;
+    for (let i = 0; i < 10; i++) {
+      const gen = ((b >> i) & 1) !== 0 ? GEN[i] : 0;
+      chk = chk ^ gen;
     }
   });
 
@@ -226,7 +229,7 @@ function rs1024CreateChecksum(data: number[]) {
     .concat(data)
     .concat(generateArray([], CHECKSUM_WORDS_LENGTH, () => 0));
   const polymod = rs1024Polymod(values) ^ 1;
-  return generateArray([], CHECKSUM_WORDS_LENGTH, (i) => polymod >> 10 * i & 1023).reverse();
+  return generateArray([], CHECKSUM_WORDS_LENGTH, i => (polymod >> (10 * i)) & 1023).reverse();
 }
 
 function rs1024VerifyChecksum(data: number[]) {
@@ -239,7 +242,7 @@ function rs1024VerifyChecksum(data: number[]) {
 function intFromIndices(indices: number[]) {
   let value = BigInt(0);
   const radix = BigInt(Math.pow(2, RADIX_BITS));
-  indices.forEach((index) => {
+  indices.forEach(index => {
     value = value * radix + BigInt(index);
   });
 
@@ -251,15 +254,16 @@ function intFromIndices(indices: number[]) {
 //
 function intToIndices(value: bigint, length: number, bits: number) {
   const mask = BigInt((1 << bits) - 1);
-  const result = generateArray([], length, (i) => Number(value >> BigInt(i) * BigInt(bits) & mask)) as number[];
+  const result = generateArray([], length, i => Number((value >> (BigInt(i) * BigInt(bits))) & mask)) as number[];
   return result.reverse();
 }
 
 function mnemonicFromIndices(indices: number[]) {
-  const result = indices.map((index) => {
-    return WORD_LIST[index];
-  });
-  return result.toString().split(',').join(' ');
+  const result = indices.map(index => WORD_LIST[index]);
+  return result
+    .toString()
+    .split(',')
+    .join(' ');
 }
 
 function mnemonicToIndices(mnemonic: string) {
@@ -291,7 +295,6 @@ function recoverSecret(threshold: number, shares: Map<number, number[]>): number
   return sharedSecret;
 }
 
-
 interface DecodedMnemonic {
   identifier: number;
   iterationExponent: number;
@@ -310,10 +313,12 @@ function decodeMnemonic(mnemonic: string): DecodedMnemonic {
   const data = mnemonicToIndices(mnemonic);
 
   if (data.length < MNEMONICS_WORDS_LENGTH) {
-    throw new Error(`Invalid mnemonic length. The length of each mnemonic must be at least ${MNEMONICS_WORDS_LENGTH} words.`);
+    throw new Error(
+      `Invalid mnemonic length. The length of each mnemonic must be at least ${MNEMONICS_WORDS_LENGTH} words.`
+    );
   }
 
-  const paddingLen = RADIX_BITS * (data.length - METADATA_WORDS_LENGTH) % 16;
+  const paddingLen = (RADIX_BITS * (data.length - METADATA_WORDS_LENGTH)) % 16;
   if (paddingLen > 8) {
     throw new Error('Invalid mnemonic length.');
   }
@@ -324,7 +329,7 @@ function decodeMnemonic(mnemonic: string): DecodedMnemonic {
 
   const idExpInt = Number(intFromIndices(data.slice(0, ITERATION_EXP_WORDS_LENGTH)));
   const identifier = idExpInt >> ITERATION_EXP_BITS_LENGTH;
-  const iterationExponent = idExpInt & (1 << ITERATION_EXP_BITS_LENGTH) - 1;
+  const iterationExponent = idExpInt & ((1 << ITERATION_EXP_BITS_LENGTH) - 1);
   const tmp = intFromIndices(data.slice(ITERATION_EXP_WORDS_LENGTH, ITERATION_EXP_WORDS_LENGTH + 2));
 
   const indices = intToIndices(tmp, 5, 4);
@@ -338,7 +343,9 @@ function decodeMnemonic(mnemonic: string): DecodedMnemonic {
   const valueData = data.slice(ITERATION_EXP_WORDS_LENGTH + 2, data.length - CHECKSUM_WORDS_LENGTH);
 
   if (groupCount < groupThreshold) {
-    throw new Error(`Invalid mnemonic: ${mnemonic}.\n Group threshold (${groupThreshold}) cannot be greater than group count (${groupCount}).`);
+    throw new Error(
+      `Invalid mnemonic: ${mnemonic}.\n Group threshold (${groupThreshold}) cannot be greater than group count (${groupCount}).`
+    );
   }
 
   const valueInt = intFromIndices(valueData);
@@ -355,7 +362,7 @@ function decodeMnemonic(mnemonic: string): DecodedMnemonic {
       groupCount: groupCount + 1,
       memberIndex: memberIndex,
       memberThreshold: memberThreshold + 1,
-      share: share
+      share: share,
     };
   } catch (e) {
     throw new Error(`Invalid mnemonic padding (${e})`);
@@ -377,7 +384,7 @@ function decodeMnemonics(mnemonics: string[]): DecodedMnemonics {
   const groupCounts = new Set<number>();
   const groups: DecodedMnemonics['groups'] = new Map();
 
-  mnemonics.forEach((mnemonic) => {
+  mnemonics.forEach(mnemonic => {
     const decoded = decodeMnemonic(mnemonic);
 
     identifiers.add(decoded.identifier);
@@ -408,7 +415,9 @@ function decodeMnemonics(mnemonics: string[]): DecodedMnemonics {
   });
 
   if (identifiers.size !== 1 || iterationExponents.size !== 1) {
-    throw new Error(`Invalid set of mnemonics. All mnemonics must begin with the same ${ITERATION_EXP_WORDS_LENGTH} words.`);
+    throw new Error(
+      `Invalid set of mnemonics. All mnemonics must begin with the same ${ITERATION_EXP_WORDS_LENGTH} words.`
+    );
   }
 
   if (groupThresholds.size !== 1) {
@@ -424,19 +433,24 @@ function decodeMnemonics(mnemonics: string[]): DecodedMnemonics {
     iterationExponent: iterationExponents.values().next().value,
     groupThreshold: groupThresholds.values().next().value,
     groupCount: groupCounts.values().next().value,
-    groups: groups
+    groups: groups,
   };
 }
 
-function groupPrefix(identifier: number, iterationExponent: number, groupIndex: number, groupThreshold: number, groupCount: number) {
+function groupPrefix(
+  identifier: number,
+  iterationExponent: number,
+  groupIndex: number,
+  groupThreshold: number,
+  groupCount: number
+) {
   const idExpInt = BigInt((identifier << ITERATION_EXP_BITS_LENGTH) + iterationExponent);
   const indc = intToIndices(idExpInt, ITERATION_EXP_WORDS_LENGTH, RADIX_BITS);
-  const indc2 = (groupIndex << 6) + (groupThreshold - 1 << 2) + (groupCount - 1 >> 2);
+  const indc2 = (groupIndex << 6) + ((groupThreshold - 1) << 2) + ((groupCount - 1) >> 2);
   indc.push(indc2);
 
   return indc;
 }
-
 
 //
 // Combines mnemonic shares to obtain the master secret which was previously
@@ -455,11 +469,15 @@ export function combineMnemonics(mnemonics: string[], passphrase = '') {
   const groups = decoded.groups;
 
   if (groups.size < groupThreshold) {
-    throw new Error(`Insufficient number of mnemonic groups (${groups.size}). The required number of groups is ${groupThreshold}.`);
+    throw new Error(
+      `Insufficient number of mnemonic groups (${groups.size}). The required number of groups is ${groupThreshold}.`
+    );
   }
 
   if (groups.size !== groupThreshold) {
-    throw new Error(`Wrong number of mnemonic groups. Expected $groupThreshold groups, but ${groups.size} were provided.`);
+    throw new Error(
+      `Wrong number of mnemonic groups. Expected $groupThreshold groups, but ${groups.size} were provided.`
+    );
   }
 
   const allShares = new Map<number, number[]>();
@@ -467,14 +485,12 @@ export function combineMnemonics(mnemonics: string[], passphrase = '') {
     const threshold = members.keys().next().value;
     const shares = members.values().next().value;
     if (shares.size !== threshold) {
-      const prefix = groupPrefix(
-        identifier,
-        iterationExponent,
-        groupIndex,
-        groupThreshold,
-        groupCount
+      const prefix = groupPrefix(identifier, iterationExponent, groupIndex, groupThreshold, groupCount);
+      throw new Error(
+        `Wrong number of mnemonics. Expected ${threshold} mnemonics starting with "${mnemonicFromIndices(
+          prefix
+        )}", \n but ${shares.size} were provided.`
       );
-      throw new Error(`Wrong number of mnemonics. Expected ${threshold} mnemonics starting with "${mnemonicFromIndices(prefix)}", \n but ${shares.size} were provided.`);
     }
 
     const recovered = recoverSecret(threshold, shares);
@@ -506,7 +522,7 @@ export function encodeMnemonic(
   groupCount: number,
   memberIndex: number,
   memberThreshold: number,
-  value: number[],
+  value: number[]
 ) {
   // Convert the share value from bytes to wordlist indices.
   const valueWordCount = bitsToWords(value.length * 8);
@@ -517,9 +533,7 @@ export function encodeMnemonic(
   const gp = groupPrefix(newIdentifier, iterationExponent, groupIndex, groupThreshold, groupCount);
   const tp = intToIndices(valueInt, valueWordCount, RADIX_BITS);
 
-  const calc = ((groupCount - 1 & 3) << 8) +
-    (memberIndex << 4) +
-    (memberThreshold - 1);
+  const calc = (((groupCount - 1) & 3) << 8) + (memberIndex << 4) + (memberThreshold - 1);
 
   gp.push(calc);
   const shareData = gp.concat(tp);

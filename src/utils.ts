@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+import * as crypto from 'crypto';
 import { BIGINT_WORD_BITS, RADIX_BITS } from './constants';
 
 export function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
@@ -7,11 +7,10 @@ export function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
   }
 
   let i = 0;
-  return a.every((item) => {
+  return a.every(item => {
     return b[i++] === item;
   });
 }
-
 
 export function generateArray<T>(arr: (T | number)[], n: number, v?: (idx: number) => T) {
   const m = n || arr.length;
@@ -28,6 +27,7 @@ export function encodeHexString(s: string): number[] {
   }
   return bytes;
 }
+
 export function decodeHexString(s: number[]): string {
   const str: string[] = [];
   const hex = s.toString().split(',');
@@ -35,28 +35,13 @@ export function decodeHexString(s: number[]): string {
     str.push(String.fromCharCode(Number(hex[i])));
   }
   return str.toString().replace(/,/g, '');
-};
-
-/*
-Array.prototype.toHexString = function () {
-  return Array.prototype.map.call(this, function (byte) {
-    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
-  }).join('');
-};
-
-Array.prototype.toByteArray = function (hexString) {
-  for (let i = 0; i < hexString.length; i = i + 2) {
-    this.push(parseInt(hexString.substr(i, 2), 16));
-  }
-  return this;
-};
- */
+}
 
 export function decodeBigInt(bytes: number[]): bigint {
   let result = BigInt(0);
   for (let i = 0; i < bytes.length; i++) {
     const b = BigInt(bytes[bytes.length - i - 1]);
-    result = result + (b << BIGINT_WORD_BITS * BigInt(i));
+    result = result + (b << (BIGINT_WORD_BITS * BigInt(i)));
   }
   return result;
 }
@@ -78,7 +63,9 @@ export function encodeBigInt(number: bigint, paddedLength = 0): number[] {
   }
 
   if (paddedLength !== 0 && result.length > paddedLength) {
-    throw new Error(`Error in encoding BigInt value, expected less than ${paddedLength} length value, got ${result.length}`);
+    throw new Error(
+      `Error in encoding BigInt value, expected less than ${paddedLength} length value, got ${result.length}`
+    );
   }
 
   return result;

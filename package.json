@@ -5,8 +5,8 @@
   "main": "dist/src/slip39.js",
   "scripts": {
     "test": "nyc -- mocha --opts mocha.opts 'test/*.ts'",
-    "check-fmt": "prettier --check",
-    "fmt": "prettier --write",
+    "check-fmt": "prettier --check 'src/**/*.ts' 'test/**/*.ts'",
+    "fmt": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "lint": "eslint . --ext .ts",
     "build": "tsc"
   },

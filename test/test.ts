@@ -7,19 +7,17 @@ import { mnemonicVectors, vectors } from './vectors';
 const MASTERSECRET = 'ABCDEFGHIJKLMNOP';
 const MS = encodeHexString(MASTERSECRET);
 const PASSPHRASE = 'TREZOR';
-const ONE_GROUP = [
-  [5, 7]
-];
+const ONE_GROUP = [[5, 7]];
 
 const slip15 = slip39.Slip39.fromArray(MS, {
   passphrase: PASSPHRASE,
   threshold: 1,
-  groups: ONE_GROUP
+  groups: ONE_GROUP,
 });
 
 const slip15NoPW = slip39.Slip39.fromArray(MS, {
   threshold: 1,
-  groups: ONE_GROUP
+  groups: ONE_GROUP,
 });
 
 //
@@ -60,11 +58,11 @@ describe('Basic Tests', () => {
     const mnemonics = slip15.fromPath('r/0').mnemonics;
 
     const combinations = getCombinations([0, 1, 2, 3, 4, 5, 6], 5);
-    combinations.forEach((item) => {
+    combinations.forEach(item => {
       shuffle(item);
       const description = `Test shuffled combination ${item.join(' ')}.`;
       it(description, () => {
-        const shares = item.map((idx) => mnemonics[idx]);
+        const shares = item.map(idx => mnemonics[idx]);
         assert.equal(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(shares, PASSPHRASE)));
       });
     });
@@ -75,7 +73,10 @@ describe('Basic Tests', () => {
     const nopwMnemonics = slip15NoPW.fromPath('r/0').mnemonics;
 
     it('should return valid mastersecret when user submits valid passphrse', () => {
-      assert.equal(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(mnemonics.slice(0, 5), PASSPHRASE)));
+      assert.equal(
+        decodeHexString(MS),
+        decodeHexString(slip39.Slip39.recoverSecret(mnemonics.slice(0, 5), PASSPHRASE))
+      );
     });
     it('should NOT return valid mastersecret when user submits invalid passphrse', () => {
       assert.notEqual(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(mnemonics.slice(0, 5))));
@@ -87,11 +88,11 @@ describe('Basic Tests', () => {
 
   describe('Test iteration exponent', () => {
     const slip1 = slip39.Slip39.fromArray(MS, {
-      iterationExponent: 1
+      iterationExponent: 1,
     });
 
     const slip2 = slip39.Slip39.fromArray(MS, {
-      iterationExponent: 2
+      iterationExponent: 2,
     });
 
     it('should return valid mastersecret when user apply valid iteration exponent', () => {
@@ -122,20 +123,22 @@ describe('Group Sharing Tests', () => {
       [3, 5],
       [3, 3],
       [2, 5],
-      [1, 1]
+      [1, 1],
     ];
     const slip = slip39.Slip39.fromArray(MS, {
       threshold: 2,
-      groups: groups
+      groups: groups,
     });
 
     const group2Mnemonics = slip.fromPath('r/2').mnemonics;
     const group3Mnemonic = slip.fromPath('r/3').mnemonics[0];
 
     it('Should return the valid master secret when it tested with minimal sets of mnemonics.', () => {
-      const mnemonics = group2Mnemonics.filter((_, index) => {
-        return index === 0 || index === 2;
-      }).concat(group3Mnemonic);
+      const mnemonics = group2Mnemonics
+        .filter((_, index) => {
+          return index === 0 || index === 2;
+        })
+        .concat(group3Mnemonic);
 
       assert.equal(decodeHexString(MS), decodeHexString(slip39.Slip39.recoverSecret(mnemonics)));
     });
@@ -149,7 +152,7 @@ describe('Group Sharing Tests', () => {
 });
 
 describe('Original test vectors Tests', () => {
-  vectors.forEach((item) => {
+  vectors.forEach(item => {
     const description = item[0];
     const mnemonics = item[1];
     const masterSecret = Buffer.from(item[2], 'hex');
@@ -157,7 +160,10 @@ describe('Original test vectors Tests', () => {
     it(description, () => {
       if (masterSecret.length !== 0) {
         const ms = slip39.Slip39.recoverSecret(mnemonics, PASSPHRASE);
-        assert.equal(masterSecret.every((v, i) => v === ms[i]), true);
+        assert.equal(
+          masterSecret.every((v, i) => v === ms[i]),
+          true
+        );
       } else {
         assert.throws(() => slip39.Slip39.recoverSecret(mnemonics, PASSPHRASE), Error);
       }
@@ -167,36 +173,57 @@ describe('Original test vectors Tests', () => {
 
 describe('Invalid Shares', () => {
   const tests: [string, number, number[][], number[]][] = [
-    ['Short master secret', 1, [
-      [2, 3]
-    ], MS.slice(0, 14)],
-    ['Odd length master secret', 1, [
-      [2, 3]
-    ], MS.concat([55])],
-    ['Group threshold exceeds number of groups', 3, [
-      [3, 5],
-      [2, 5]
-    ], MS],
-    ['Invalid group threshold.', 0, [
-      [3, 5],
-      [2, 5]
-    ], MS],
-    ['Member threshold exceeds number of members', 2, [
-      [3, 2],
-      [2, 5]
-    ], MS],
-    ['Invalid member threshold', 2, [
-      [0, 2],
-      [2, 5]
-    ], MS],
-    ['Group with multiple members and threshold 1', 2, [
-      [3, 5],
-      [1, 3],
-      [2, 5]
-    ], MS]
+    ['Short master secret', 1, [[2, 3]], MS.slice(0, 14)],
+    ['Odd length master secret', 1, [[2, 3]], MS.concat([55])],
+    [
+      'Group threshold exceeds number of groups',
+      3,
+      [
+        [3, 5],
+        [2, 5],
+      ],
+      MS,
+    ],
+    [
+      'Invalid group threshold.',
+      0,
+      [
+        [3, 5],
+        [2, 5],
+      ],
+      MS,
+    ],
+    [
+      'Member threshold exceeds number of members',
+      2,
+      [
+        [3, 2],
+        [2, 5],
+      ],
+      MS,
+    ],
+    [
+      'Invalid member threshold',
+      2,
+      [
+        [0, 2],
+        [2, 5],
+      ],
+      MS,
+    ],
+    [
+      'Group with multiple members and threshold 1',
+      2,
+      [
+        [3, 5],
+        [1, 3],
+        [2, 5],
+      ],
+      MS,
+    ],
   ];
 
-  tests.forEach((item) => {
+  tests.forEach(item => {
     const description = item[0];
     const threshold = item[1];
 
@@ -204,11 +231,14 @@ describe('Invalid Shares', () => {
     const secret = item[3];
 
     it(description, () => {
-      assert.throws(() =>
-        slip39.Slip39.fromArray(secret, {
-          threshold: threshold,
-          groups: groups
-        }), Error);
+      assert.throws(
+        () =>
+          slip39.Slip39.fromArray(secret, {
+            threshold: threshold,
+            groups: groups,
+          }),
+        Error
+      );
     });
   });
 });
@@ -226,7 +256,7 @@ describe('Mnemonic Validation', () => {
     });
   });
 
-  mnemonicVectors.forEach((item) => {
+  mnemonicVectors.forEach(item => {
     const description = item[0];
     const mnemonics = item[1];
 
@@ -243,11 +273,11 @@ describe('Mnemonic Validation', () => {
 });
 
 function itTestArray(t: number, g: number, gs: number[][]) {
-  it(`recover master secret for ${t} shares (threshold=${t}) of ${g} '[1, 1,]' groups",`,() => {
+  it(`recover master secret for ${t} shares (threshold=${t}) of ${g} '[1, 1,]' groups",`, () => {
     const slip = slip39.Slip39.fromArray(MS, {
       groups: gs.slice(0, g),
       passphrase: PASSPHRASE,
-      threshold: t
+      threshold: t,
     });
 
     const mnemonics = slip.fromPath('r').mnemonics.slice(0, t);

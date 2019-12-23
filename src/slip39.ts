@@ -75,24 +75,19 @@ export class Slip39 {
       throw new Error('missing required parameter groupThreshold');
     }
     this.groupThreshold = groupThreshold;
-    this.root = this.buildRecursive(
-      new Slip39Node(),
-      groups,
-      ems,
-      threshold
-    );
+    this.root = this.buildRecursive(new Slip39Node(), groups, ems, threshold);
   }
 
-  static fromArray(masterSecret: number[], {
-    passphrase = '',
-    threshold = 1,
-    groups = [
-      [1, 1]
-    ],
-    iterationExponent = 0
-  } = {}) {
+  static fromArray(
+    masterSecret: number[],
+    { passphrase = '', threshold = 1, groups = [[1, 1]], iterationExponent = 0 } = {}
+  ) {
     if (masterSecret.length * 8 < MIN_ENTROPY_BITS) {
-      throw Error(`The length of the master secret (${masterSecret.length} bytes) must be at least ${bitsToBytes(MIN_ENTROPY_BITS)} bytes.`);
+      throw Error(
+        `The length of the master secret (${masterSecret.length} bytes) must be at least ${bitsToBytes(
+          MIN_ENTROPY_BITS
+        )} bytes.`
+      );
     }
 
     if (masterSecret.length % 2 !== 0) {
@@ -104,19 +99,23 @@ export class Slip39 {
     }
 
     if (threshold > groups.length) {
-      throw Error(`The requested group threshold (${threshold}) must not exceed the number of groups (${groups.length}).`);
+      throw Error(
+        `The requested group threshold (${threshold}) must not exceed the number of groups (${groups.length}).`
+      );
     }
 
-    groups.forEach((item) => {
+    groups.forEach(item => {
       if (item[0] === 1 && item[1] > 1) {
-        throw Error(`Creating multiple member shares with member threshold 1 is not allowed. Use 1-of-1 member sharing instead. ${groups.join()}`);
+        throw Error(
+          `Creating multiple member shares with member threshold 1 is not allowed. Use 1-of-1 member sharing instead. ${groups.join()}`
+        );
       }
     });
 
     const identifier = slipHelper.generateIdentifier();
     const ems = slipHelper.crypt(masterSecret, passphrase, iterationExponent, identifier);
 
-    const slip = new Slip39({
+    return new Slip39({
       iterationExponent: iterationExponent,
       identifier: identifier,
       groupCount: groups.length,
@@ -125,11 +124,15 @@ export class Slip39 {
       groups,
       threshold,
     });
-
-    return slip;
   }
 
-  buildRecursive(current: Slip39Node, nodes: number[][], secret: number[], threshold: number, index?: number): Slip39Node {
+  buildRecursive(
+    current: Slip39Node,
+    nodes: number[][],
+    secret: number[],
+    threshold: number,
+    index?: number
+  ): Slip39Node {
     // It means it's a leaf.
     if (nodes.length === 0) {
       if (index === undefined) {
@@ -152,7 +155,7 @@ export class Slip39 {
     let children: Slip39Node[] = [];
     let idx = 0;
 
-    nodes.forEach((item) => {
+    nodes.forEach(item => {
       // n=threshold
       const n = item[0];
       // m=members
@@ -212,7 +215,7 @@ export class Slip39 {
 
   parseChildren(path: string) {
     const splitted = path.split('/').slice(1);
-    return splitted.map((pathFragment) => {
+    return splitted.map(pathFragment => {
       return parseInt(pathFragment);
     });
   }

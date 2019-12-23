@@ -10,7 +10,9 @@ export const ID_BITS_LENGTH = 15;
 export const ITERATION_EXP_BITS_LENGTH = 5;
 
 // The length of the random identifier and iteration exponent in words.
-export const ITERATION_EXP_WORDS_LENGTH = Math.trunc((ID_BITS_LENGTH + ITERATION_EXP_BITS_LENGTH + RADIX_BITS - 1) / RADIX_BITS);
+export const ITERATION_EXP_WORDS_LENGTH = Math.trunc(
+  (ID_BITS_LENGTH + ITERATION_EXP_BITS_LENGTH + RADIX_BITS - 1) / RADIX_BITS
+);
 
 // The maximum iteration exponent
 export const MAX_ITERATION_EXP = Math.pow(2, ITERATION_EXP_BITS_LENGTH);
@@ -34,7 +36,9 @@ export const MIN_ENTROPY_BITS = 128;
 export const METADATA_WORDS_LENGTH = ITERATION_EXP_WORDS_LENGTH + 2 + CHECKSUM_WORDS_LENGTH;
 
 // The length of the mnemonic in words without the share value.
-export const MNEMONICS_WORDS_LENGTH = Math.trunc( METADATA_WORDS_LENGTH + (MIN_ENTROPY_BITS + RADIX_BITS - 1) / RADIX_BITS);
+export const MNEMONICS_WORDS_LENGTH = Math.trunc(
+  METADATA_WORDS_LENGTH + (MIN_ENTROPY_BITS + RADIX_BITS - 1) / RADIX_BITS
+);
 
 // The minimum number of iterations to use in PBKDF2.
 export const ITERATION_COUNT = 10000;
@@ -48,10 +52,9 @@ export const DIGEST_INDEX = 254;
 // The index of the share containing the shared secret.
 export const SECRET_INDEX = 255;
 
-export const WORD_LIST_MAP  = WORD_LIST.reduce((obj: { [word: string]: number }, val, idx) => {
+export const WORD_LIST_MAP = WORD_LIST.reduce((obj: { [word: string]: number }, val, idx) => {
   obj[val] = idx;
   return obj;
 }, {});
 
 export const BIGINT_WORD_BITS = BigInt(8);
-
