@@ -45,7 +45,7 @@ npm install slip39
 See `example/main.js`
 
   ``` javascript
-const slip39 = require('./src/slip39.js');
+const slip39 = require('slip39');
 const assert = require('assert');
 // threshold (N) number of group shares required to reconstruct the master secret.
 const threshold = 2;
@@ -70,8 +70,7 @@ const groups = [
   [2, 6]
 ];
 
-const slip = slip39.fromArray({
-  masterSecret: masterSecret,
+const slip = slip39.fromArray(masterSecret, {
   passphrase: passphrase,
   threshold: threshold,
   groups: groups
@@ -81,10 +80,19 @@ const slip = slip39.fromArray({
 const aliceShare = slip.fromPath('r/0').mnemonics;
 
 // and any two of family's shares.
-const familyShares = slip.fromPath('r/3/1').mnemonics
-  .concat(slip.fromPath('r/3/3').mnemonics);
+//const familyShares = slip.fromPath('r/3/1').mnemonics
+//  .concat(slip.fromPath('r/3/3').mnemonics);
+// const allShares = aliceShare.concat(familyShares);
 
-const allShares = aliceShare.concat(familyShares);
+// or, use three of the friend shares
+//const friendShares = slip.fromPath('r/2/0').mnemonics
+//  .concat(slip.fromPath('r/2/3').mnemonics)
+//  .concat(slip.fromPath('r/2/4').mnemonics);
+// const allShares = aliceShare.concat(friendShares);
+
+// or, use Alice's other share
+const otherAliceShare = slip.fromPath('r/1').mnemonics;
+const allShares = aliceShare.concat(otherAliceShare);
 
 console.log('Shares used for restoring the master secret:');
 allShares.forEach((s) => console.log(s));

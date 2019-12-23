@@ -1,4 +1,4 @@
-const slip39 = require('../src/slip39.js');
+const slip39 = require('slip39');
 const assert = require('assert');
 // threshold (N) number of group shares required to reconstruct the master secret.
 const threshold = 2;
