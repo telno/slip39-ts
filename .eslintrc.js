@@ -1,10 +1,27 @@
 //module.exports = { "extends": "standard" };
 module.exports = {
-  "env": {
-    "browser": true,
-    "node": true,
-    "es6": true
+  root: true,
+  parser: '@typescript-eslint/parser',
+  env: {
+    browser: true,
+    node: true,
+    es6: true,
   },
+  plugins: [
+    '@typescript-eslint',
+  ],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended'
+  ],
+  rules: {
+    '@typescript-eslint/explicit-function-return-type': 'off'
+  }
+};
+
+/**
+module.exports = {
 	"parserOptions": {
 		"sourceType": "module",
 	},
@@ -37,7 +54,6 @@ module.exports = {
     "no-negated-in-lhs": 2, // disallow negation of the left operand of an in expression
     "no-obj-calls": 2, // disallow the use of object properties of the global object (Math and JSON) as functions
     "no-regex-spaces": 2, // disallow multiple spaces in a regular expression literal
-    "quote-props": 2, // disallow reserved words being used as object literal keys (off by default)
     "no-sparse-arrays": 2, // disallow sparse arrays
     "no-unreachable": 2, // disallow unreachable statements after a return, throw, continue, or break statement
     "use-isnan": 2, // disallow comparisons with the value NaN
@@ -71,7 +87,6 @@ module.exports = {
     "no-floating-decimal": 2, // disallow the use of leading or trailing decimal points in numeric literals (off by default)
     "no-implied-eval": 2, // disallow use of eval()-like methods
     "no-iterator": 2, // disallow usage of __iterator__ property
-    "no-labels": 2, // disallow use of labeled statements
     "no-lone-blocks": 2, // disallow unnecessary nested blocks
     "no-loop-func": 2, // disallow creation of functions within loops
     "no-multi-spaces": 2, // disallow use of multiple spaces
@@ -117,7 +132,7 @@ module.exports = {
     "no-label-var": 2, // disallow labels that share a name with a variable
     "no-shadow": 2, // disallow declaration of variables already declared in the outer scope
     "no-shadow-restricted-names": 2, // disallow shadowing of names such as arguments
-    // "no-undef": 2, // disallow use of undeclared variables unless mentioned in a /*global */ block
+    // "no-undef": 2, // disallow use of undeclared variables unless mentioned in a /*global * / block
     "no-undef-init": 2, // disallow use of undefined when initializing variables
     "no-undefined": 2, // disallow use of undefined variable (off by default)
     "no-unused-vars": 2, // disallow declaration of variables that are not used in the code
@@ -153,7 +168,6 @@ module.exports = {
     "no-ternary": 0, // disallow the use of ternary operators (off by default)
     "no-trailing-spaces": 1, // disallow trailing whitespace at the end of lines
     "no-underscore-dangle": 1, // disallow dangling underscores in identifiers
-    "no-extra-parens": 1, // disallow wrapping of non-IIFE statements in parens
     "one-var": [1, "never"], // allow just one var statement per function (off by default)
     "operator-assignment": [1, "never"], // require assignment operator shorthand where possible or prohibit it entirely (off by default)
     "padded-blocks": [1, "never"], // enforce padding within blocks (off by default)
@@ -195,3 +209,4 @@ module.exports = {
     //"no-plusplus": 2, // disallow use of unary operators, ++ and -- (off by default)
   }
 }
+*/

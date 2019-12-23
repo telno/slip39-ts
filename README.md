@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/slip39.svg)](https://www.npmjs.org/package/slip39)
 
 
-The javascript implementation of the [SLIP39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md) for Shamir's Secret-Sharing for Mnemonic Codes.
+The Typescript implementation of the [SLIP39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md) for Shamir's Secret-Sharing for Mnemonic Codes.
 
 The code based on my [Dart implementation of SLIP-0039](https://github.com/ilap/slip39-dart/).
 
@@ -37,14 +37,14 @@ The group's first parameter is the `N` (group threshold) while the second is the
 ## Installing
 
 ``` 
-npm install slip39
+yarn add slip39
 
 ```
 
 ## Using
 See `example/main.js`
 
-  ``` javascript
+```javascript
 const slip39 = require('slip39');
 const assert = require('assert');
 // threshold (N) number of group shares required to reconstruct the master secret.
@@ -105,9 +105,9 @@ assert(masterSecret.decodeHex() === recoveredSecret.decodeHex());
 
 ## Testing
 
-``` bash
- $ npm install
- $ npm test
+```bash
+$ npm install
+$ npm test
 
   Basic Tests
     Test threshold 1 with 5 of 7 shares of a group combinations
@@ -208,8 +208,8 @@ assert(masterSecret.decodeHex() === recoveredSecret.decodeHex());
 
 ### JSON Representation 
 
-``` json
-  {
+```json
+{
   "name": "Slip39",
   "threshold": 2,
   "shares": [
@@ -255,6 +255,6 @@ assert(masterSecret.decodeHex() === recoveredSecret.decodeHex());
 ```
 # LICENSE
 
-CopyRight (c) 2019 Pal Dorogi `"iLap"` <pal.dorogi@gmail.com>
+Copyright (c) 2019 Pal Dorogi `"iLap"` <pal.dorogi@gmail.com>
 
 [MIT License](LICENSE)

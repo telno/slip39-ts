@@ -1,10 +1,13 @@
 {
-  "name": "slip39",
-  "version": "0.1.6",
-  "description": "The javascript implementation of the SLIP39 for Shamir's Secret-Sharing for Mnemonic Codes.",
-  "main": "src/slip39.js",
+  "name": "slip39-ts",
+  "version": "0.2.0",
+  "description": "The Typescript implementation of the SLIP39 for Shamir's Secret-Sharing for Mnemonic Codes.",
+  "main": "dist/src/slip39.js",
   "scripts": {
-    "test": "mocha"
+    "test": "nyc -- mocha --opts mocha.opts",
+    "check-fmt": "prettier --check",
+    "fmt": "prettier --write",
+    "lint": "eslint . --ext .ts"
   },
   "author": "Pal Dorogi \"iLap\" <pal.dorogi@gmail.com>",
   "license": "MIT",
@@ -21,6 +24,19 @@
     "SSS"
   ],
   "devDependencies": {
-    "mocha": "^6.2.0"
+    "@types/node": "^12.12.21",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
+    "eslint": "^6.8.0",
+    "mocha": "^6.2.0",
+    "nyc": "^15.0.0",
+    "prettier": "^1.19.1",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.4"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "trailingComma": "es5",
+    "singleQuote": true
   }
 }
