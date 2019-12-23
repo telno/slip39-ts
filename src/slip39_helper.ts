@@ -68,7 +68,7 @@ function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
 }
 
 
-function generateArray<T>(arr: (T | number)[], n: number, v?: (idx: number) => T) {
+export function generateArray<T>(arr: (T | number)[], n: number, v?: (idx: number) => T) {
   const m = n || arr.length;
   for (let i = 0; i < m; i++) {
     arr.push(typeof v === 'undefined' ? i : v(i));
@@ -76,7 +76,7 @@ function generateArray<T>(arr: (T | number)[], n: number, v?: (idx: number) => T
   return arr;
 }
 
-function encodeHexString(s: string): number[] {
+export function encodeHexString(s: string): number[] {
   const bytes = [];
   for (let i = 0; i < s.length; ++i) {
     bytes.push(s.charCodeAt(i));
