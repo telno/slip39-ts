@@ -2,163 +2,25 @@ import * as crypto from 'crypto';
 
 import { EXP_TABLE, LOG_TABLE } from './tables';
 import { WORD_LIST } from './words';
-
-// The length of the radix in bits.
-const RADIX_BITS = 10;
-
-// The length of the random identifier in bits.
-const ID_BITS_LENGTH = 15;
-
-// The length of the iteration exponent in bits.
-const ITERATION_EXP_BITS_LENGTH = 5;
-
-// The length of the random identifier and iteration exponent in words.
-const ITERATION_EXP_WORDS_LENGTH = Math.trunc((ID_BITS_LENGTH + ITERATION_EXP_BITS_LENGTH + RADIX_BITS - 1) / RADIX_BITS);
-
-// The maximum iteration exponent
-const MAX_ITERATION_EXP = Math.pow(2, ITERATION_EXP_BITS_LENGTH);
-
-// The maximum number of shares that can be created.
-const MAX_SHARE_COUNT = 16;
-
-// The length of the RS1024 checksum in words.
-const CHECKSUM_WORDS_LENGTH = 3;
-
-// The length of the digest of the shared secret in bytes.
-const DIGEST_LENGTH = 4;
-
-// The customization string used in the RS1024 checksum and in the PBKDF2 salt.
-const SALT_STRING = 'shamir';
-
-// The minimum allowed entropy of the master secret.
-export const MIN_ENTROPY_BITS = 128;
-
-// The minimum allowed length of the mnemonic in words.
-const METADATA_WORDS_LENGTH = ITERATION_EXP_WORDS_LENGTH + 2 + CHECKSUM_WORDS_LENGTH;
-
-// The length of the mnemonic in words without the share value.
-const MNEMONICS_WORDS_LENGTH = Math.trunc( METADATA_WORDS_LENGTH + (MIN_ENTROPY_BITS + RADIX_BITS - 1) / RADIX_BITS);
-
-// The minimum number of iterations to use in PBKDF2.
-const ITERATION_COUNT = 10000;
-
-// The number of rounds to use in the Feistel cipher.
-const ROUND_COUNT = 4;
-
-// The index of the share containing the digest of the shared secret.
-const DIGEST_INDEX = 254;
-
-// The index of the share containing the shared secret.
-const SECRET_INDEX = 255;
-
-export const WORD_LIST_MAP  = WORD_LIST.reduce((obj: { [word: string]: number }, val, idx) => {
-  obj[val] = idx;
-  return obj;
-}, {});
-
-function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
-  if (a === null || b === null || a.length !== b.length) {
-    return false;
-  }
-
-  let i = 0;
-  return a.every((item) => {
-    return b[i++] === item;
-  });
-}
-
-
-export function generateArray<T>(arr: (T | number)[], n: number, v?: (idx: number) => T) {
-  const m = n || arr.length;
-  for (let i = 0; i < m; i++) {
-    arr.push(typeof v === 'undefined' ? i : v(i));
-  }
-  return arr;
-}
-
-export function encodeHexString(s: string): number[] {
-  const bytes = [];
-  for (let i = 0; i < s.length; ++i) {
-    bytes.push(s.charCodeAt(i));
-  }
-  return bytes;
-}
-
-/*
-//
-// Helper functions for SLIP39 implementation.
-//
-Array.prototype.decodeHex = function () {
-  let str = [];
-  const hex = this.toString().split(',');
-  for (let i = 0; i < hex.length; i++) {
-    str.push(String.fromCharCode(hex[i]));
-  }
-  return str.toString().replace(/,/g, '');
-};
-
-Array.prototype.toHexString = function () {
-  return Array.prototype.map.call(this, function (byte) {
-    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
-  }).join('');
-};
-
-Array.prototype.toByteArray = function (hexString) {
-  for (let i = 0; i < hexString.length; i = i + 2) {
-    this.push(parseInt(hexString.substr(i, 2), 16));
-  }
-  return this;
-};
- */
-
-const BIGINT_WORD_BITS = BigInt(8);
-
-function decodeBigInt(bytes: number[]): bigint {
-  let result = BigInt(0);
-  for (let i = 0; i < bytes.length; i++) {
-    const b = BigInt(bytes[bytes.length - i - 1]);
-    result = result + (b << BIGINT_WORD_BITS * BigInt(i));
-  }
-  return result;
-}
-
-function encodeBigInt(number: bigint, paddedLength = 0): number[] {
-  let num = number;
-  const BYTE_MASK = BigInt(0xff);
-  const BIGINT_ZERO = BigInt(0);
-  const result = new Array(0);
-
-  while (num > BIGINT_ZERO) {
-    result.unshift(num & BYTE_MASK);
-    num = num >> BIGINT_WORD_BITS;
-  }
-
-  // Zero padding to the length
-  for (let i = result.length; i < paddedLength; i++) {
-    result.unshift(0);
-  }
-
-  if (paddedLength !== 0 && result.length > paddedLength) {
-    throw new Error(`Error in encoding BigInt value, expected less than ${paddedLength} length value, got ${result.length}`);
-  }
-
-  return result;
-}
-
-export function bitsToBytes(n: number) {
-  const res = (n + 7) / 8;
-  return Math.trunc(res);
-}
-
-function bitsToWords(n: number) {
-  const res = (n + RADIX_BITS - 1) / RADIX_BITS;
-  return Math.trunc(res);
-}
-
-function randomBytes(length = 32): number[] {
-  const randoms = crypto.randomBytes(length);
-  return Array.prototype.slice.call(randoms, 0);
-}
+import {
+  bitsToBytes,
+  bitsToWords, decodeBigInt,
+  encodeBigInt,
+  encodeHexString,
+  generateArray,
+  listsAreEqual,
+  randomBytes,
+} from './utils';
+import {
+  CHECKSUM_WORDS_LENGTH,
+  DIGEST_INDEX,
+  DIGEST_LENGTH, ID_BITS_LENGTH,
+  ITERATION_COUNT, ITERATION_EXP_BITS_LENGTH, ITERATION_EXP_WORDS_LENGTH,
+  MAX_ITERATION_EXP,
+  MAX_SHARE_COUNT, METADATA_WORDS_LENGTH, MNEMONICS_WORDS_LENGTH, RADIX_BITS,
+  ROUND_COUNT,
+  SALT_STRING, SECRET_INDEX, WORD_LIST_MAP,
+} from './constants';
 
 //
 // The round function used internally by the Feistel cipher.

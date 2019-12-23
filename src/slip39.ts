@@ -1,6 +1,7 @@
 /* eslint-disable radix */
 import * as slipHelper from './slip39_helper';
-import { generateArray } from './slip39_helper';
+import { MIN_ENTROPY_BITS } from './constants';
+import { bitsToBytes, generateArray } from './utils';
 
 const MAX_DEPTH = 2;
 
@@ -90,8 +91,8 @@ export class Slip39 {
     ],
     iterationExponent = 0
   } = {}) {
-    if (masterSecret.length * 8 < slipHelper.MIN_ENTROPY_BITS) {
-      throw Error(`The length of the master secret (${masterSecret.length} bytes) must be at least ${slipHelper.bitsToBytes(slipHelper.MIN_ENTROPY_BITS)} bytes.`);
+    if (masterSecret.length * 8 < MIN_ENTROPY_BITS) {
+      throw Error(`The length of the master secret (${masterSecret.length} bytes) must be at least ${bitsToBytes(MIN_ENTROPY_BITS)} bytes.`);
     }
 
     if (masterSecret.length % 2 !== 0) {
@@ -170,7 +171,7 @@ export class Slip39 {
     return current;
   }
 
-  static recoverSecret(mnemonics: string[], passphrase: string) {
+  static recoverSecret(mnemonics: string[], passphrase?: string) {
     return slipHelper.combineMnemonics(mnemonics, passphrase);
   }
 
