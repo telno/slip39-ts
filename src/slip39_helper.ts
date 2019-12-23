@@ -56,7 +56,7 @@ export const WORD_LIST_MAP  = WORD_LIST.reduce((obj: { [word: string]: number },
   return obj;
 }, {});
 
-function listsAreEqual(a: null | any[], b: null | any[]) {
+function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
   if (a === null || b === null || a.length !== b.length) {
     return false;
   }
@@ -163,7 +163,7 @@ function randomBytes(length = 32): number[] {
 //
 // The round function used internally by the Feistel cipher.
 //
-function roundFunction(round: any, passphrase: any, exp: any, salt: any, secret: any) {
+function roundFunction(round: number, passphrase: number[], exp: number, salt: number[], secret: number[]) {
   const saltedSecret = salt.concat(secret);
   const roundedPhrase = [round].concat(passphrase);
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
@@ -172,7 +172,7 @@ function roundFunction(round: any, passphrase: any, exp: any, salt: any, secret:
   return Array.prototype.slice.call(key, 0);
 }
 
-function getSalt(identifier: any) {
+function getSalt(identifier: number[]) {
   const salt = encodeHexString(SALT_STRING);
   return salt.concat(identifier);
 }
@@ -183,7 +183,7 @@ function xor(a: number[], b: number[]) {
   return generateArray([], a.length, (i) => a[i] ^ b[i]);
 }
 
-export function crypt(masterSecret: any, passphrase: any, iterationExponent: any, identifier: any, encrypt = true) {
+export function crypt(masterSecret: number[], passphrase: string, iterationExponent: number, identifier: number[], encrypt = true) {
   // Iteration exponent validated here.
   if (iterationExponent < 0 || iterationExponent > MAX_ITERATION_EXP) {
     throw Error(`Invalid iteration exponent (${iterationExponent}). Expected between 0 and ${MAX_ITERATION_EXP}`);
@@ -192,14 +192,14 @@ export function crypt(masterSecret: any, passphrase: any, iterationExponent: any
   let IL = masterSecret.slice().slice(0, masterSecret.length / 2);
   let IR = masterSecret.slice().slice(masterSecret.length / 2);
 
-  const pwd = passphrase.encodeHex();
+  const pwd = encodeHexString(passphrase);
 
   const salt = getSalt(identifier);
 
   let range = generateArray([], ROUND_COUNT);
   range = encrypt ? range : range.reverse();
 
-  range.forEach((round: any) => {
+  range.forEach((round: number) => {
     const f = roundFunction(round, pwd, iterationExponent, salt, IR);
     const t = xor(IL, f);
     IL = IR;
@@ -208,7 +208,7 @@ export function crypt(masterSecret: any, passphrase: any, iterationExponent: any
   return IR.concat(IL);
 }
 
-function createDigest(randomData: any, sharedSecret: any) {
+function createDigest(randomData: number[], sharedSecret: number[]): number[] {
   const hmac = crypto.createHmac('sha256', Buffer.from(randomData));
 
   hmac.update(Buffer.from(sharedSecret));
@@ -218,8 +218,7 @@ function createDigest(randomData: any, sharedSecret: any) {
   return Array.prototype.slice.call(result, 0);
 }
 
-function interpolate(shares: Map<any, any>, x: any) {
-  const xCoord = new Set(shares.keys());
+function interpolate(shares: Map<number, number[]>, x: number): number[] {
   const arr = Array.from(shares.values());
   const sharesValueLengths = new Set(arr);
 
@@ -227,12 +226,9 @@ function interpolate(shares: Map<any, any>, x: any) {
     throw new Error('Invalid set of shares. All share values must have the same length.');
   }
 
-  if (xCoord.has(x)) {
-    shares.forEach((k, v) => {
-      if (k === x) {
-        return v;
-      }
-    });
+  const existing = shares.get(x);
+  if (existing) {
+    return existing;
   }
 
   // Logarithm of the product of (x_i - x) for i = 1, ... , k.
@@ -257,20 +253,18 @@ function interpolate(shares: Map<any, any>, x: any) {
 
     const logBasisEval = basis < 0 ? 255 + basis : basis;
 
-    v.forEach((item: any, idx: number) => {
+    v.forEach((item: number, idx: number) => {
       const shareVal = item;
       const intermediateSum = results[idx];
-      const r = shareVal !== 0 ?
-        EXP_TABLE[(LOG_TABLE[shareVal] + logBasisEval) % 255] : 0;
+      const r = shareVal !== 0 ? EXP_TABLE[(LOG_TABLE[shareVal] + logBasisEval) % 255] : 0;
 
-      const res = intermediateSum ^ r;
-      results[idx] = res;
+      results[idx] = intermediateSum ^ r;
     });
   });
   return results;
 }
 
-export function splitSecret(threshold: number, shareCount: number, sharedSecret: any[]) {
+export function splitSecret(threshold: number, shareCount: number, sharedSecret: number[]): number[][] {
   if (threshold <= 0) {
     throw Error(`The requested threshold (${threshold}) must be a positive integer.`);
   }
@@ -284,7 +278,7 @@ export function splitSecret(threshold: number, shareCount: number, sharedSecret:
   }
   //  If the threshold is 1, then the digest of the shared secret is not used.
   if (threshold === 1) {
-    return generateArray([], shareCount, () => sharedSecret);
+    return generateArray([], shareCount, () => sharedSecret) as number[][];
   }
 
   const randomShareCount = threshold - 2;
@@ -292,7 +286,7 @@ export function splitSecret(threshold: number, shareCount: number, sharedSecret:
   const randomPart = randomBytes(sharedSecret.length - DIGEST_LENGTH);
   const digest = createDigest(randomPart, sharedSecret);
 
-  const baseShares = new Map<number, any>();
+  const baseShares = new Map<number, number[]>();
   let shares: number[][] = [];
   if (randomShareCount) {
     shares = generateArray([], randomShareCount, () => randomBytes(sharedSecret.length)) as number[][];
@@ -358,9 +352,7 @@ function rs1024CreateChecksum(data: number[]) {
     .concat(data)
     .concat(generateArray([], CHECKSUM_WORDS_LENGTH, () => 0));
   const polymod = rs1024Polymod(values) ^ 1;
-  const result = generateArray([], CHECKSUM_WORDS_LENGTH, (i) => polymod >> 10 * i & 1023).reverse();
-
-  return result;
+  return generateArray([], CHECKSUM_WORDS_LENGTH, (i) => polymod >> 10 * i & 1023).reverse();
 }
 
 function rs1024VerifyChecksum(data: number[]) {
@@ -407,7 +399,7 @@ function mnemonicToIndices(mnemonic: string) {
   }, []);
 }
 
-function recoverSecret(threshold: number, shares: Map<number, any>) {
+function recoverSecret(threshold: number, shares: Map<number, number[]>): number[] {
   // If the threshold is 1, then the digest of the shared secret is not used.
   if (threshold === 1) {
     return shares.values().next().value;
@@ -418,8 +410,7 @@ function recoverSecret(threshold: number, shares: Map<number, any>) {
   const digest = digestShare.slice(0, DIGEST_LENGTH);
   const randomPart = digestShare.slice(DIGEST_LENGTH);
 
-  const recoveredDigest = createDigest(
-    randomPart, sharedSecret);
+  const recoveredDigest = createDigest(randomPart, sharedSecret);
   if (!listsAreEqual(digest, recoveredDigest)) {
     throw new Error('Invalid digest of the shared secret.');
   }
