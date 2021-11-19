@@ -19,13 +19,13 @@ This project is still in early development phase. Use it at your own risk.
  which means that max d^(l-1), i.e. 16^2, leaf nodes (M) can be in a complete tree (or forest).
 
  The first level (l=1) node of the tree is the the root (R), the level 2 ones are the `SSS` groups (Gs or group nodes) e.g. `[G0, ..., Gd]`.
- 
+
  The last, the third, level nodes are the only leafs (M, group members) which contains the generated mnemonics.
- 
+
  Every node has two values:
   - the N and
   - M i.e. n(N,M).
- 
+
  Whihc means, that N (`threshold`) number of M children are required to reconstruct the node's secret.
 
 ## Format
@@ -37,6 +37,7 @@ The group's first parameter is the `N` (group threshold) while the second is the
 ## Installing
 
 ```
+
 yarn add slip39
 
 ```
