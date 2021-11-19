@@ -1,6 +1,7 @@
 {
   "name": "slip39-ts",
   "version": "0.2.0",
+  "type": "commonjs",
   "description": "The Typescript implementation of the SLIP39 for Shamir's Secret-Sharing for Mnemonic Codes.",
   "main": "dist/src/slip39.js",
   "scripts": {
@@ -42,6 +43,8 @@
     "singleQuote": true
   },
   "nyc": {
-    "extension": [ ".ts" ]
+    "extension": [
+      ".ts"
+    ]
   }
 }
