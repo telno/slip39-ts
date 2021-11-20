@@ -98,3 +98,4 @@ typings/
 package-lock.json*
 .idea/
 dist/
+yarn.lock
