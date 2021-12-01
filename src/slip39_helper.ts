@@ -1,5 +1,5 @@
-import * as crypto from 'crypto';
-
+import * as nodeCrypto from 'crypto';
+import { Buffer } from 'buffer';
 import { EXP_TABLE, LOG_TABLE } from './tables';
 import { WORD_LIST } from './words';
 import {
@@ -34,14 +34,22 @@ import {
 //
 // The round function used internally by the Feistel cipher.
 //
-function roundFunction(round: number, passphrase: number[], exp: number, salt: number[], secret: number[]): number[] {
+async function roundFunction(round: number, passphrase: number[], exp: number, salt: number[], secret: number[]): Promise<number[]> {
   const saltedSecret = salt.concat(secret);
   const roundedPhrase = [round].concat(passphrase);
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
 
   const r = Buffer.from(roundedPhrase);
   const s = Buffer.from(saltedSecret);
-  const key = crypto.pbkdf2Sync(r, s, count, secret.length, 'sha256');
+  const cryptoApi: any = nodeCrypto
+  let key: number[]
+
+  if (typeof cryptoApi?.pbkdf2Sync === 'function') {
+    key = cryptoApi.pbkdf2Sync(r, s, count, secret.length, 'sha256');
+  } else if (typeof cryptoApi?.pbkdf2 === 'function') {
+    key = await cryptoApi.pbkdf2(r, s, count, secret.length, 'sha256');
+  } else throw new TypeError('pbkdf2 method not found on the crypto api')
+
   return Array.prototype.slice.call(key, 0);
 }
 
@@ -56,7 +64,7 @@ function xor(a: number[], b: number[]) {
   return generateArray([], a.length, i => a[i] ^ b[i]);
 }
 
-export function crypt(
+export async function crypt(
   masterSecret: number[],
   passphrase: string,
   iterationExponent: number,
@@ -78,21 +86,24 @@ export function crypt(
   let range = generateArray([], ROUND_COUNT);
   range = encrypt ? range : range.reverse();
 
-  range.forEach((round: number) => {
-    const f = roundFunction(round, pwd, iterationExponent, salt, IR);
+  let initial: Promise<void>|undefined // using reduce as async replacement of foreach
+  await range.reduce(async (prevOp, round) => {
+    await prevOp
+    const f = await roundFunction(round, pwd, iterationExponent, salt, IR);
     const t = xor(IL, f);
     IL = IR;
     IR = t;
-  });
+  }, initial);
   return IR.concat(IL);
 }
 
-function createDigest(randomData: number[], sharedSecret: number[]): number[] {
-  const hmac = crypto.createHmac('sha256', Buffer.from(randomData));
-
+async function createDigest(randomData: number[], sharedSecret: number[]): Promise<number[]> {
+  const hmac = nodeCrypto.createHmac('sha256', Buffer.from(randomData));
   hmac.update(Buffer.from(sharedSecret));
-
-  let result = hmac.digest();
+  let result: any = hmac.digest();
+  if (result instanceof Promise) {
+    result = await result
+  }
   result = result.slice(0, 4);
   return Array.prototype.slice.call(result, 0);
 }
@@ -143,7 +154,7 @@ function interpolate(shares: Map<number, number[]>, x: number): number[] {
   return results;
 }
 
-export function splitSecret(threshold: number, shareCount: number, sharedSecret: number[]): number[][] {
+export async function splitSecret(threshold: number, shareCount: number, sharedSecret: number[]): Promise<number[][]> {
   if (threshold <= 0) {
     throw Error(`The requested threshold (${threshold}) must be a positive integer.`);
   }
@@ -163,15 +174,17 @@ export function splitSecret(threshold: number, shareCount: number, sharedSecret:
   const randomShareCount = threshold - 2;
 
   const randomPart = randomBytes(sharedSecret.length - DIGEST_LENGTH);
-  const digest = createDigest(randomPart, sharedSecret);
+  const digest = await createDigest(randomPart, sharedSecret);
 
   const baseShares = new Map<number, number[]>();
   let shares: number[][] = [];
+  let initial: Promise<void>|undefined // using reduce as async replacement of foreach
   if (randomShareCount) {
     shares = generateArray([], randomShareCount, () => randomBytes(sharedSecret.length)) as number[][];
-    shares.forEach((item, idx) => {
+    await shares.reduce(async (prevOp, item, idx) => { 
+      await prevOp
       baseShares.set(idx, item);
-    });
+    }, initial);
   }
   baseShares.set(DIGEST_INDEX, digest.concat(randomPart));
   baseShares.set(SECRET_INDEX, sharedSecret);
@@ -277,7 +290,7 @@ function mnemonicToIndices(mnemonic: string) {
   }, []);
 }
 
-function recoverSecret(threshold: number, shares: Map<number, number[]>): number[] {
+async function recoverSecret(threshold: number, shares: Map<number, number[]>): Promise<number[]> {
   // If the threshold is 1, then the digest of the shared secret is not used.
   if (threshold === 1) {
     return shares.values().next().value;
@@ -288,9 +301,9 @@ function recoverSecret(threshold: number, shares: Map<number, number[]>): number
   const digest = digestShare.slice(0, DIGEST_LENGTH);
   const randomPart = digestShare.slice(DIGEST_LENGTH);
 
-  const recoveredDigest = createDigest(randomPart, sharedSecret);
+  const recoveredDigest = await createDigest(randomPart, sharedSecret);
   if (!listsAreEqual(digest, recoveredDigest)) {
-    throw new Error('Invalid digest of the shared secret.');
+    throw new Error('Digests of shared secret do not match');
   }
   return sharedSecret;
 }
@@ -456,7 +469,7 @@ function groupPrefix(
 // Combines mnemonic shares to obtain the master secret which was previously
 // split using Shamir's secret sharing scheme.
 //
-export function combineMnemonics(mnemonics: string[], passphrase = '') {
+export async function combineMnemonics(mnemonics: string[], passphrase = '') {
   if (mnemonics === null || mnemonics.length === 0) {
     throw new Error('The list of mnemonics is empty.');
   }
@@ -481,7 +494,7 @@ export function combineMnemonics(mnemonics: string[], passphrase = '') {
   }
 
   const allShares = new Map<number, number[]>();
-  groups.forEach((members: Map<number, Map<number, number[]>>, groupIndex: number) => {
+  for (let [groupIndex, members] of groups.entries()) {
     const threshold = members.keys().next().value;
     const shares = members.values().next().value;
     if (shares.size !== threshold) {
@@ -493,11 +506,11 @@ export function combineMnemonics(mnemonics: string[], passphrase = '') {
       );
     }
 
-    const recovered = recoverSecret(threshold, shares);
+    const recovered = await recoverSecret(threshold, shares);
     allShares.set(groupIndex, recovered);
-  });
+  };
 
-  const ems = recoverSecret(groupThreshold, allShares);
+  const ems = await recoverSecret(groupThreshold, allShares);
   const id = intToIndices(BigInt(identifier), ITERATION_EXP_WORDS_LENGTH, 8);
   return crypt(ems, passphrase, iterationExponent, id, false);
 }

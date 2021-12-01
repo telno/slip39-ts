@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import * as nodeCrypto from 'crypto';
 import { BIGINT_WORD_BITS, RADIX_BITS } from './constants';
 
 export function listsAreEqual(a: null | unknown[], b: null | unknown[]) {
@@ -82,6 +82,6 @@ export function bitsToWords(n: number) {
 }
 
 export function randomBytes(length = 32): number[] {
-  const randoms = crypto.randomBytes(length);
+  const randoms = nodeCrypto.randomBytes(length);
   return Array.prototype.slice.call(randoms, 0);
 }
